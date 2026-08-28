@@ -4,6 +4,7 @@ import ProductCard from "./Components/ProductCard";
 import CartDrawer from "./Components/CartDrawer";
 import WishlistDrawer from "./Components/WishlistDrawer";
 import products from "./Data";
+import { useEffect } from "react";
 
 function App() {
   // Extract unique brands
@@ -19,8 +20,51 @@ function App() {
   });
 
   // States
-  const [cartItem, setCartItem] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  const [cartItem, setCartItem] = useState(()=>{
+    const savedCart=localStorage.getItem("tech-cart");
+    if(savedCart)//true
+  {
+    try {
+      return JSON.parse(savedCart)
+    } catch (error) {
+      console.error("problem!!!",error);
+      return [];
+      
+    }
+  }
+  else{
+    return [];
+  }
+  return [];
+  });
+
+
+useEffect(()=>{
+
+  localStorage.setItem("tech-cart",JSON.stringify(cartItem))
+
+},[cartItem])
+
+
+
+
+
+
+  // const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState(()=>{
+    let saveWish=localStorage.getItem("save-wish")
+    return saveWish?JSON.parse(saveWish):0;
+  });
+
+  useEffect(()=>{
+    localStorage.setItem("save-wish" ,JSON.stringify(wishlist));
+
+  },[wishlist])
+
+
+
+
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectBrand, setSelectBrand] = useState("All");
   const [sortBy, setSortBy] = useState("");
