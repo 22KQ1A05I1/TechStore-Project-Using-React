@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import ProductCard from "./Components/ProductCard";
 import CartDrawer from "./Components/CartDrawer";
 import WishlistDrawer from "./Components/WishlistDrawer";
 import products from "./Data";
-import { useEffect } from "react";
 
 function App() {
   // Extract unique brands
@@ -12,54 +11,66 @@ function App() {
 
   // Dark mode state with localStorage persistence
   const [darkMode, setDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("shopzone_theme");
-    if (savedTheme) {
-      return savedTheme === "dark";
+    try {
+      const savedTheme = localStorage.getItem("shopzone_theme");
+      if (savedTheme) {
+        return savedTheme === "dark";
+      }
+    } catch (error) {
+      console.error("Error reading theme from localStorage:", error);
     }
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
-  // States
-  const [cartItem, setCartItem] = useState(()=>{
-    const savedCart=localStorage.getItem("tech-cart");
-    if(savedCart)//true
-  {
+  // Cart state with localStorage persistence
+  const [cartItem, setCartItem] = useState(() => {
     try {
-      return JSON.parse(savedCart)
+      const savedCart = localStorage.getItem("tech-cart");
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
     } catch (error) {
-      console.error("problem!!!",error);
-      return [];
-      
+      console.error("Error reading tech-cart from localStorage:", error);
     }
-  }
-  else{
     return [];
-  }
-  return [];
   });
 
-
-useEffect(()=>{
-
-  localStorage.setItem("tech-cart",JSON.stringify(cartItem))
-
-},[cartItem])
-
-
-
-
-
-
-  // const [wishlist, setWishlist] = useState([]);
-  const [wishlist, setWishlist] = useState(()=>{
-    let saveWish=localStorage.getItem("save-wish")
-    return saveWish?JSON.parse(saveWish):0;
+  // Wishlist state with localStorage persistence
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const savedWish = localStorage.getItem("save-wish");
+      if (savedWish) {
+        const parsed = JSON.parse(savedWish);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.error("Error reading save-wish from localStorage:", error);
+    }
+    return [];
   });
 
-  useEffect(()=>{
-    localStorage.setItem("save-wish" ,JSON.stringify(wishlist));
+  // Sync cart to localStorage whenever cartItem changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("tech-cart", JSON.stringify(cartItem));
+    } catch (error) {
+      console.error("Error saving tech-cart to localStorage:", error);
+    }
+  }, [cartItem]);
 
-  },[wishlist])
+  // Sync wishlist to localStorage whenever wishlist changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("save-wish", JSON.stringify(wishlist));
+    } catch (error) {
+      console.error("Error saving save-wish to localStorage:", error);
+    }
+  }, [wishlist]);
 
 
 
@@ -98,19 +109,18 @@ useEffect(()=>{
 
   // Add to cart function
   function addToCart(product) {
-    const existingItem = cartItem.find((item) => item.id === product.id);
-
-    if (existingItem) {
-      setCartItem(
-        cartItem.map((item) =>
+    setCartItem((prevCart) => {
+      const existingItem = prevCart.find((item) => item.id === product.id);
+      if (existingItem) {
+        return prevCart.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
-        )
-      );
-    } else {
-      setCartItem([...cartItem, { ...product, quantity: 1 }]);
-    }
+        );
+      } else {
+        return [...prevCart, { ...product, quantity: 1 }];
+      }
+    });
     showToast(`🛒 "${product.name}" added to cart!`);
   }
 
@@ -120,8 +130,8 @@ useEffect(()=>{
       removeFromCart(productId);
       return;
     }
-    setCartItem(
-      cartItem.map((item) =>
+    setCartItem((prevCart) =>
+      prevCart.map((item) =>
         item.id === productId ? { ...item, quantity: newQty } : item
       )
     );
@@ -129,11 +139,13 @@ useEffect(()=>{
 
   // Remove from cart
   function removeFromCart(productId) {
-    const item = cartItem.find((i) => i.id === productId);
-    setCartItem(cartItem.filter((item) => item.id !== productId));
-    if (item) {
-      showToast(`Removed "${item.name}" from cart`);
-    }
+    setCartItem((prevCart) => {
+      const item = prevCart.find((i) => i.id === productId);
+      if (item) {
+        showToast(`Removed "${item.name}" from cart`);
+      }
+      return prevCart.filter((item) => item.id !== productId);
+    });
   }
 
   // Clear cart
@@ -156,13 +168,16 @@ useEffect(()=>{
     const product = products.find((p) => p.id === productId);
     const productName = product ? product.name : "Product";
 
-    if (wishlist.includes(productId)) {
-      setWishlist(wishlist.filter((id) => id !== productId));
-      showToast(`🤍 Removed "${productName}" from wishlist`);
-    } else {
-      setWishlist([...wishlist, productId]);
-      showToast(`❤️ Added "${productName}" to wishlist!`);
-    }
+    setWishlist((prevWishlist) => {
+      const isWishlisted = prevWishlist.includes(productId);
+      if (isWishlisted) {
+        showToast(`🤍 Removed "${productName}" from wishlist`);
+        return prevWishlist.filter((id) => id !== productId);
+      } else {
+        showToast(`❤️ Added "${productName}" to wishlist!`);
+        return [...prevWishlist, productId];
+      }
+    });
   }
 
   // Reset all filters

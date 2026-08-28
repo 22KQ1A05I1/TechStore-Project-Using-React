@@ -4,15 +4,15 @@ import "./WishlistDrawer.css";
 function WishlistDrawer({
   isOpen,
   onClose,
-  wishlistIds,
-  products,
+  wishlistIds = [],
+  products = [],
   onToggleWishlist,
   onAddToCart,
   onAddAllToCart
 }) {
   if (!isOpen) return null;
 
-  const wishlistedProducts = products.filter((p) => wishlistIds.includes(p.id));
+  const wishlistedProducts = (products || []).filter((p) => (wishlistIds || []).includes(p.id));
 
   return (
     <div className="wishlist-backdrop" onClick={onClose}>

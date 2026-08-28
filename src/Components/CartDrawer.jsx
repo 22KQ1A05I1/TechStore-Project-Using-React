@@ -4,12 +4,12 @@ import "./CartDrawer.css";
 function CartDrawer({
   isOpen,
   onClose,
-  cartItems,
+  cartItems = [],
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
-  cartTotal,
-  cartCount
+  cartTotal = 0,
+  cartCount = 0
 }) {
   if (!isOpen) return null;
 
